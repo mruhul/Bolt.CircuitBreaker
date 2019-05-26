@@ -3,7 +3,6 @@ using Bolt.CircuitBreaker.PollyImpl;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Serilog;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -13,28 +12,16 @@ namespace TestConsole
 {
     class Program
     {
-        private static void ConfigureLogger(IServiceProvider sp)
-        {
-            Log.Logger = new LoggerConfiguration()
-              .MinimumLevel.Information()
-              .WriteTo.Console()
-              .CreateLogger();
-
-            var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
-            loggerFactory.AddSerilog();
-        }
-
-
         private static IServiceProvider ConfigureServices()
         {
             var sc = new ServiceCollection();
             var builder = new ConfigurationBuilder()
                 .SetBasePath(Directory.GetCurrentDirectory())
-                .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true);
+                .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
 
-            IConfiguration configuration = builder.Build();
-            sc.AddLogging();
-            sc.AddPollyCircuitBreaker(configuration);
+            sc.AddLogging(configure => configure.AddConsole())
+                .Configure<LoggerFilterOptions>(opt => opt.MinLevel = LogLevel.Error);
+            sc.AddPollyCircuitBreaker(builder.Build());
 
             return sc.BuildServiceProvider();
         }
@@ -43,7 +30,7 @@ namespace TestConsole
         static async Task Main(string[] args)
         {
             var sp = ConfigureServices();
-            ConfigureLogger(sp);
+            //ConfigureLogger(sp);
 
             CircuitBreakerLog.Init(sp.GetRequiredService<ILoggerFactory>());
 
