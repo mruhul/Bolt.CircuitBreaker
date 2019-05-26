@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using Bolt.CircuitBreaker.Abstracts;
@@ -21,11 +22,15 @@ namespace Bolt.CircuitBreaker.PollyImpl
 
             try
             {
+                var sw = Stopwatch.StartNew();
+
                 await funcAsync(context);
+
+                sw.Stop();
 
                 var response = new CircuitResponse { Status = CircuitStatus.Succeed };
 
-                await Notify(request, response, context);
+                await Notify(request, response, context, sw.Elapsed);
 
                 return response;
             }
@@ -41,11 +46,15 @@ namespace Bolt.CircuitBreaker.PollyImpl
 
             try
             {
+                var sw = Stopwatch.StartNew();
+
                 var value = await funcAsync(context);
+
+                sw.Stop();
 
                 var response = new CircuitResponse<T> { Status = CircuitStatus.Succeed, Value = value };
 
-                await Notify(request, response, context);
+                await Notify(request, response, context, sw.Elapsed);
 
                 return response;
             }
@@ -61,18 +70,29 @@ namespace Bolt.CircuitBreaker.PollyImpl
 
             var response = new TResponse { Status = CircuitStatus.Failed };
 
-            await Notify(request, response, context);
+            await Notify(request, response, context, TimeSpan.Zero);
 
             return response;
         }
 
-        private Task Notify(ICircuitRequest request, ICircuitResponse response, ICircuitContext context)
+        private Task Notify(ICircuitRequest request, ICircuitResponse response, ICircuitContext context, TimeSpan executionTime)
         {
             if (_listeners == null || !_listeners.Any()) return Task.CompletedTask;
 
             try
             {
-                var tasks = _listeners.Select(x => x.Notify(request, response, context)).ToArray();
+                var data = new CircuitStatusData
+                {
+                    AppName = request.AppName,
+                    CircuitKey = request.CircuitKey,
+                    Context = context,
+                    ExecutionTime = executionTime,
+                    RequestId = request.RequestId,
+                    ServiceName = request.ServiceName,
+                    Status = response.Status
+                };
+
+                var tasks = _listeners.Select(x => x.Notify(data)).ToArray();
 
                 return Task.WhenAll(tasks);
             }
