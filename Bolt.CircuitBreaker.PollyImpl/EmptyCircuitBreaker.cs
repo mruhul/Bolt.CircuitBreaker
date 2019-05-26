@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Bolt.CircuitBreaker.Abstracts;
-using Microsoft.Extensions.Logging;
 
 namespace Bolt.CircuitBreaker.PollyImpl
 {
@@ -22,7 +21,7 @@ namespace Bolt.CircuitBreaker.PollyImpl
 
             try
             {
-                await funcAsync(new CircuitContext());
+                await funcAsync(context);
 
                 var response = new CircuitResponse { Status = CircuitStatus.Succeed };
 
