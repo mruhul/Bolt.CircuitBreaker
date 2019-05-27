@@ -15,7 +15,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Bolt.CircuitBreaker.Listeners.Redis\Bolt.CircuitBreaker.Listeners.Redis.csproj" />
     <ProjectReference Include="..\Bolt.CircuitBreaker.PollyImpl\Bolt.CircuitBreaker.PollyImpl.csproj" />
   </ItemGroup>
 
