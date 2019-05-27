@@ -21,6 +21,9 @@ namespace Bolt.CircuitBreaker.PollyImpl
 
         public async Task<ICircuitResponse> ExecuteAsync(ICircuitRequest request, Func<ICircuitContext, Task> funcAsync)
         {
+            if (string.IsNullOrWhiteSpace(request?.CircuitKey)) throw new ArgumentNullException(nameof(request.CircuitKey));
+            if (funcAsync == null) throw new ArgumentNullException(nameof(funcAsync));
+
             var context = new CircuitContext(request.Context);
 
             var policy = await _policyProvider.Get(request, context);
@@ -43,6 +46,9 @@ namespace Bolt.CircuitBreaker.PollyImpl
 
         public async Task<ICircuitResponse<T>> ExecuteAsync<T>(ICircuitRequest request, Func<ICircuitContext, Task<T>> funcAsync)
         {
+            if (string.IsNullOrWhiteSpace(request.CircuitKey)) throw new ArgumentNullException(nameof(request.CircuitKey));
+            if (funcAsync == null) throw new ArgumentNullException(nameof(funcAsync));
+
             var context = new CircuitContext(request.Context);
 
             var policy = await _policyProvider.Get(request, context);
@@ -54,7 +60,6 @@ namespace Bolt.CircuitBreaker.PollyImpl
                 var sw = Stopwatch.StartNew();
                 value = await funcAsync(context);
                 sw.Stop();
-                CircuitBreakerLog.LogWarning(sw.ElapsedMilliseconds.ToString());
                 executionTime = sw.Elapsed;
             });
 
