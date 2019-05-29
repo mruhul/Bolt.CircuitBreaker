@@ -107,7 +107,7 @@ namespace Bolt.CircuitBreaker.PollyImpl
 
             if (outcome == Polly.OutcomeType.Failure)
             {
-                if (finalException is Polly.Timeout.TimeoutRejectedException)
+                if (finalException is Polly.Timeout.TimeoutRejectedException || finalException is TimeoutException)
                 {
                     Trace(appName, serviceName, CircuitStatus.Timeout, request, finalException, executionTime);
 
