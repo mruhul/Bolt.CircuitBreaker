@@ -11,7 +11,7 @@ namespace Bolt.CircuitBreaker.PollyImpl
 {
     public interface IPolicyProvider
     {
-        Task<IAsyncPolicy> Get(ICircuitRequest request, ICircuitContext context);
+        Task<IAsyncPolicy> Get(ICircuitRequest request);
     }
 
     public class PolicyProvider : IPolicyProvider
@@ -25,7 +25,7 @@ namespace Bolt.CircuitBreaker.PollyImpl
             _settingsProvider = settingsProvider;
         }
 
-        public async Task<IAsyncPolicy> Get(ICircuitRequest request, ICircuitContext context)
+        public async Task<IAsyncPolicy> Get(ICircuitRequest request)
         {
             IAsyncPolicy result;
 
@@ -53,7 +53,7 @@ namespace Bolt.CircuitBreaker.PollyImpl
                 {
                     foreach(var provider in _settingsProvider)
                     {
-                        settings = await provider.Get(request, context);
+                        settings = await provider.Get(request);
 
                         if (settings != null) break;
                     }
@@ -109,8 +109,8 @@ namespace Bolt.CircuitBreaker.PollyImpl
             if(CircuitBreakerLog.IsTraceEnabled)
             {
                 CircuitBreakerLog.LogTrace($@"RequestId:{request.RequestId}
-                                        |AppName:{request.AppName}
-                                        |ServiceName:{request.ServiceName}
+                                        |AppName:{request.Context.GetAppName()}
+                                        |ServiceName:{request.Context.GetServiceName()}
                                         |CircuitKey:{request.CircuitKey}
                                         |Request.Retry:{(request.Retry == null ? "None": $"{request.Retry}")}
                                         |Request.Timeout:{(request.Timeout == TimeSpan.Zero ? "None" : $"{request.Timeout.TotalMilliseconds}ms")}

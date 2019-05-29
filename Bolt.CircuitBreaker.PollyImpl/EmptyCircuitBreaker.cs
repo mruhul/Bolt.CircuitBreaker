@@ -16,66 +16,66 @@ namespace Bolt.CircuitBreaker.PollyImpl
             _listeners = listeners;
         }
 
-        public async Task<ICircuitResponse> ExecuteAsync(ICircuitRequest request, Func<ICircuitContext, Task> funcAsync)
+        public async Task<ICircuitResponse> ExecuteAsync(ICircuitRequest request, Func<ICircuitRequest, Task> funcAsync)
         {
-            var context = new CircuitContext(request.Context);
+            var (appName, serviceName) = request.SetupDefaultContext();
 
             try
             {
                 var sw = Stopwatch.StartNew();
 
-                await funcAsync(context);
+                await funcAsync(request);
 
                 sw.Stop();
 
                 var response = new CircuitResponse { Status = CircuitStatus.Succeed };
 
-                await Notify(request, response, context, sw.Elapsed);
+                await Notify(appName, serviceName, request, response, sw.Elapsed);
 
                 return response;
             }
             catch(Exception e)
             {
-                return await HandleError<CircuitResponse>(request, e, context);
+                return await HandleError<CircuitResponse>(appName, serviceName, request, e);
             }
         }
 
-        public async Task<ICircuitResponse<T>> ExecuteAsync<T>(ICircuitRequest request, Func<ICircuitContext, Task<T>> funcAsync)
+        public async Task<ICircuitResponse<T>> ExecuteAsync<T>(ICircuitRequest request, Func<ICircuitRequest, Task<T>> funcAsync)
         {
-            var context = new CircuitContext(request.Context);
+            var (appName, serviceName) = request.SetupDefaultContext();
 
             try
             {
                 var sw = Stopwatch.StartNew();
 
-                var value = await funcAsync(context);
+                var value = await funcAsync(request);
 
                 sw.Stop();
 
                 var response = new CircuitResponse<T> { Status = CircuitStatus.Succeed, Value = value };
 
-                await Notify(request, response, context, sw.Elapsed);
+                await Notify(appName, serviceName, request, response, sw.Elapsed);
 
                 return response;
             }
             catch (Exception e)
             {
-                return await HandleError<CircuitResponse<T>>(request, e, context);
+                return await HandleError<CircuitResponse<T>>(appName, serviceName, request, e);
             }
         }
 
-        private async Task<TResponse> HandleError<TResponse>(ICircuitRequest request, Exception e, ICircuitContext context) where TResponse : ICircuitResponse, new()
+        private async Task<TResponse> HandleError<TResponse>(string appName, string serviceName, ICircuitRequest request, Exception e) where TResponse : ICircuitResponse, new()
         {
             CircuitBreakerLog.LogError(e, e.Message);
 
             var response = new TResponse { Status = CircuitStatus.Failed };
 
-            await Notify(request, response, context, TimeSpan.Zero);
+            await Notify(appName, serviceName, request, response, TimeSpan.Zero);
 
             return response;
         }
 
-        private Task Notify(ICircuitRequest request, ICircuitResponse response, ICircuitContext context, TimeSpan executionTime)
+        private Task Notify(string appName, string serviceName, ICircuitRequest request, ICircuitResponse response, TimeSpan executionTime)
         {
             if (_listeners == null || !_listeners.Any()) return Task.CompletedTask;
 
@@ -83,12 +83,12 @@ namespace Bolt.CircuitBreaker.PollyImpl
             {
                 var data = new CircuitStatusData
                 {
-                    AppName = request.AppName,
+                    AppName = appName,
                     CircuitKey = request.CircuitKey,
-                    Context = context,
+                    Context = request.Context,
                     ExecutionTime = executionTime,
                     RequestId = request.RequestId,
-                    ServiceName = request.ServiceName,
+                    ServiceName = serviceName,
                     Status = response.Status
                 };
 

@@ -34,13 +34,15 @@ namespace Bolt.CircuitBreaker.PollyImpl
             _config = options.Value;
         }
 
-        public Task<PolicySettings> Get(ICircuitRequest request, ICircuitContext context)
+        public Task<PolicySettings> Get(ICircuitRequest request)
         {
             var result = _config.Policies?.FirstOrDefault(x => string.Equals(x.CircuitKey, request.CircuitKey));
 
             if (result != null) return Task.FromResult(BuildSettings(result));
 
-            result = _config.Policies?.FirstOrDefault(x => string.Equals(x.CircuitKey, $"{request.ServiceName}"));
+            var serviceName = request.Context.GetServiceName();
+
+            result = _config.Policies?.FirstOrDefault(x => string.Equals(x.CircuitKey, $"{serviceName}"));
 
             if (result != null) return Task.FromResult(BuildSettings(result));
 

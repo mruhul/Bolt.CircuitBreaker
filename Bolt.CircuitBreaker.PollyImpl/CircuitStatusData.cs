@@ -1,7 +1,5 @@
 ﻿using Bolt.CircuitBreaker.Abstracts;
 using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace Bolt.CircuitBreaker.PollyImpl
 {

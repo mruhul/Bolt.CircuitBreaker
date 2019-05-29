@@ -7,6 +7,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
+using Bolt.CircuitBreaker.Listeners.Redis;
+using System.Diagnostics;
 
 namespace TestConsole
 {
@@ -18,11 +20,11 @@ namespace TestConsole
             var builder = new ConfigurationBuilder()
                 .SetBasePath(Directory.GetCurrentDirectory())
                 .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
-
+            var configuration = builder.Build();
             sc.AddLogging(configure => configure.AddConsole())
-                .Configure<LoggerFilterOptions>(opt => opt.MinLevel = LogLevel.Error);
-            sc.AddPollyCircuitBreaker(builder.Build());
-
+                .Configure<LoggerFilterOptions>(opt => opt.MinLevel = LogLevel.Trace);
+            sc.AddPollyCircuitBreaker(configuration);
+            sc.AddRedisListenerForCircuitBreaker(configuration);
             return sc.BuildServiceProvider();
         }
 
@@ -30,32 +32,29 @@ namespace TestConsole
         static async Task Main(string[] args)
         {
             var sp = ConfigureServices();
-            //ConfigureLogger(sp);
 
             CircuitBreakerLog.Init(sp.GetRequiredService<ILoggerFactory>());
 
             var cb = sp.GetService<ICircuitBreaker>();
+
             var input = new CircuitRequest
             {
-                CircuitKey = "api-books:get",
-                ServiceName = "api-books",
-                AppName = "web-books",
+                CircuitKey = "api-books",
                 RequestId = Guid.NewGuid().ToString(),
-                Retry = 1,
-                Timeout = TimeSpan.FromMilliseconds(50)
+               // Retry = 1,
+               // Timeout = TimeSpan.FromMilliseconds(50)
             };
+            input.Context.SetAppName("web-bookworm");
+            input.Context.SetServiceName("api-search");
 
+            await Execute(cb, input);
+            var ts = Stopwatch.StartNew();
             for(var i = 0; i < 500; i++)
             {
-                var tasks = new List<Task>();
-                for(var j = 0; j < 10; j++)
-                {
-                    tasks.Add(Execute(cb, input));
-
-                }
-
-                await Task.WhenAll(tasks);
+                await Execute(cb, input);
             }
+            ts.Stop();
+            Console.WriteLine($"Total:{ts.ElapsedMilliseconds}ms");
 
             Console.ReadLine();
         }
@@ -86,15 +85,15 @@ namespace TestConsole
         }
 
         private static Random _rnd = new Random();
-        private static async Task<string> DoSomething(ICircuitContext context)
+        private static async Task<string> DoSomething(ICircuitRequest request)
         {
-            Console.WriteLine($"Start...");
+            //Console.WriteLine($"Start...");
 
             //var toss = _rnd.Next(1, 5);
 
             //if (toss > 2) throw new Exception("Toss failed");
 
-            var delay = _rnd.Next(80, 90);
+            var delay = _rnd.Next(100, 100);
             await Task.Delay(delay);
 
             return $"Delay {delay}ms";

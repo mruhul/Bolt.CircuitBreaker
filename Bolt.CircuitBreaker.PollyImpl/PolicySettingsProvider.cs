@@ -6,7 +6,7 @@ namespace Bolt.CircuitBreaker.PollyImpl
 {
     public interface IPolicySettingsProvider
     {
-        Task<PolicySettings> Get(ICircuitRequest request, ICircuitContext context);
+        Task<PolicySettings> Get(ICircuitRequest request);
     }
 
     public class PolicySettings

@@ -4,16 +4,18 @@
     <TargetFramework>netstandard2.0</TargetFramework>
     <Version>1.1.0</Version>
     <Authors>Mohammad Ruhul Amin</Authors>
-    <AssemblyName>Bolt.CircuitBreaker.PollyImpl</AssemblyName>
-    <PackageId>Bolt.CircuitBreaker.PollyImpl</PackageId>
-    <PackageTags>Bolt.CircuitBreaker.PollyImpl;Bolt.CircuitBreaker</PackageTags>
+    <AssemblyName>Bolt.CircuitBreaker.Listeners.Redis</AssemblyName>
+    <PackageId>Bolt.CircuitBreaker.Listeners.Redis</PackageId>
+    <PackageTags>Bolt.CircuitBreaker.Listeners.Redis;Bolt.CircuitBreaker</PackageTags>
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="2.2.0" />
+    <PackageReference Include="Microsoft.Extensions.Options" Version="2.2.0" />
+    <PackageReference Include="StackExchange.Redis" Version="2.0.601" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="2.2.0" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="2.2.0" />
     <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="2.2.0" />
-    <PackageReference Include="Polly" Version="7.1.0" />
   </ItemGroup>
 
   <ItemGroup>

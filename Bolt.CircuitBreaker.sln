@@ -9,7 +9,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Bolt.CircuitBreaker.PollyIm
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{C7E5143F-FDCE-41A4-BAB6-B7C7B6892005}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestConsole", "TestConsole\TestConsole.csproj", "{A1DD8ECD-B8F0-457D-8160-0BB3B1CEF15D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TestConsole", "TestConsole\TestConsole.csproj", "{A1DD8ECD-B8F0-457D-8160-0BB3B1CEF15D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bolt.CircuitBreaker.Listeners.Redis", "Bolt.CircuitBreaker.Listeners.Redis\Bolt.CircuitBreaker.Listeners.Redis.csproj", "{34AA1289-14D1-44E5-86BD-3DDD1443D4DC}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -29,6 +31,10 @@ Global
 		{A1DD8ECD-B8F0-457D-8160-0BB3B1CEF15D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A1DD8ECD-B8F0-457D-8160-0BB3B1CEF15D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A1DD8ECD-B8F0-457D-8160-0BB3B1CEF15D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{34AA1289-14D1-44E5-86BD-3DDD1443D4DC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{34AA1289-14D1-44E5-86BD-3DDD1443D4DC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{34AA1289-14D1-44E5-86BD-3DDD1443D4DC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{34AA1289-14D1-44E5-86BD-3DDD1443D4DC}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
