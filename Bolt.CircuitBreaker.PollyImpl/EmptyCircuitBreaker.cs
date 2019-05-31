@@ -18,8 +18,6 @@ namespace Bolt.CircuitBreaker.PollyImpl
 
         public async Task<ICircuitResponse> ExecuteAsync(ICircuitRequest request, Func<ICircuitRequest, Task> funcAsync)
         {
-            var (appName, serviceName) = request.SetupDefaultContext();
-
             try
             {
                 var sw = Stopwatch.StartNew();
@@ -30,20 +28,18 @@ namespace Bolt.CircuitBreaker.PollyImpl
 
                 var response = new CircuitResponse { Status = CircuitStatus.Succeed };
 
-                await Notify(appName, serviceName, request, response, sw.Elapsed);
+                await Notify(request, response, sw.Elapsed);
 
                 return response;
             }
             catch(Exception e)
             {
-                return await HandleError<CircuitResponse>(appName, serviceName, request, e);
+                return await HandleError<CircuitResponse>(request, e);
             }
         }
 
         public async Task<ICircuitResponse<T>> ExecuteAsync<T>(ICircuitRequest request, Func<ICircuitRequest, Task<T>> funcAsync)
         {
-            var (appName, serviceName) = request.SetupDefaultContext();
-
             try
             {
                 var sw = Stopwatch.StartNew();
@@ -54,28 +50,28 @@ namespace Bolt.CircuitBreaker.PollyImpl
 
                 var response = new CircuitResponse<T> { Status = CircuitStatus.Succeed, Value = value };
 
-                await Notify(appName, serviceName, request, response, sw.Elapsed);
+                await Notify(request, response, sw.Elapsed);
 
                 return response;
             }
             catch (Exception e)
             {
-                return await HandleError<CircuitResponse<T>>(appName, serviceName, request, e);
+                return await HandleError<CircuitResponse<T>>(request, e);
             }
         }
 
-        private async Task<TResponse> HandleError<TResponse>(string appName, string serviceName, ICircuitRequest request, Exception e) where TResponse : ICircuitResponse, new()
+        private async Task<TResponse> HandleError<TResponse>(ICircuitRequest request, Exception e) where TResponse : ICircuitResponse, new()
         {
             CircuitBreakerLog.LogError(e, e.Message);
 
             var response = new TResponse { Status = CircuitStatus.Failed };
 
-            await Notify(appName, serviceName, request, response, TimeSpan.Zero);
+            await Notify(request, response, TimeSpan.Zero);
 
             return response;
         }
 
-        private Task Notify(string appName, string serviceName, ICircuitRequest request, ICircuitResponse response, TimeSpan executionTime)
+        private Task Notify(ICircuitRequest request, ICircuitResponse response, TimeSpan executionTime)
         {
             if (_listeners == null || !_listeners.Any()) return Task.CompletedTask;
 
@@ -83,12 +79,10 @@ namespace Bolt.CircuitBreaker.PollyImpl
             {
                 var data = new CircuitStatusData
                 {
-                    AppName = appName,
                     CircuitKey = request.CircuitKey,
                     Context = request.Context,
                     ExecutionTime = executionTime,
                     RequestId = request.RequestId,
-                    ServiceName = serviceName,
                     Status = response.Status
                 };
 

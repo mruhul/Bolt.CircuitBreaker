@@ -27,8 +27,8 @@ namespace Bolt.CircuitBreaker.Abstracts
 
     public static class CircuitContextExtensions
     {
-        private const string KeyAppName = "__appname";
-        private const string KeyServiceName = "__servicename";
+        private const string KeyAppName = "__cb:appname";
+        private const string KeyServiceName = "__cb:servicename";
 
         public static T Get<T>(this ICircuitContext context, string name)
         {

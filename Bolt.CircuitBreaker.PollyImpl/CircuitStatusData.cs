@@ -9,10 +9,6 @@ namespace Bolt.CircuitBreaker.PollyImpl
 
         public string RequestId { get; set; }
 
-        public string AppName { get; set; }
-
-        public string ServiceName { get; set; }
-
         public string CircuitKey { get; set; }
 
         public CircuitStatus Status { get; set; }

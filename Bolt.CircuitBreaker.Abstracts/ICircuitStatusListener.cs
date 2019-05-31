@@ -12,8 +12,6 @@ namespace Bolt.CircuitBreaker.Abstracts
     {
         TimeSpan ExecutionTime { get; }
         string RequestId { get; }
-        string AppName { get;  }
-        string ServiceName { get;  }
         string CircuitKey { get; }
         CircuitStatus Status { get; }
         ICircuitContext Context { get; set; }

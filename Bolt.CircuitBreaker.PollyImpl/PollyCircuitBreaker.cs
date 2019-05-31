@@ -24,8 +24,6 @@ namespace Bolt.CircuitBreaker.PollyImpl
             if (string.IsNullOrWhiteSpace(request?.CircuitKey)) throw new ArgumentNullException(nameof(request.CircuitKey));
             if (funcAsync == null) throw new ArgumentNullException(nameof(funcAsync));
 
-            var (appName, serviceName) = request.SetupDefaultContext();
-
             var policy = await _policyProvider.Get(request);
 
             TimeSpan executionTime = TimeSpan.Zero;
@@ -37,9 +35,9 @@ namespace Bolt.CircuitBreaker.PollyImpl
                 executionTime = sw.Elapsed;
             });
 
-            var result = BuildResponse<CircuitResponse>(appName, serviceName, request, policyResult.Outcome, policyResult.FinalException, executionTime);
+            var result = BuildResponse<CircuitResponse>(request, policyResult.Outcome, policyResult.FinalException, executionTime);
 
-            await Notify(appName, serviceName, request, result, executionTime);
+            await Notify(request, result, executionTime);
 
             return result;
         }
@@ -48,8 +46,6 @@ namespace Bolt.CircuitBreaker.PollyImpl
         {
             if (string.IsNullOrWhiteSpace(request.CircuitKey)) throw new ArgumentNullException(nameof(request.CircuitKey));
             if (funcAsync == null) throw new ArgumentNullException(nameof(funcAsync));
-
-            var (appName, serviceName) = request.SetupDefaultContext();
 
             var policy = await _policyProvider.Get(request);
 
@@ -63,16 +59,16 @@ namespace Bolt.CircuitBreaker.PollyImpl
                 executionTime = sw.Elapsed;
             });
 
-            var result = BuildResponse<CircuitResponse<T>>(appName, serviceName, request, policyResult.Outcome, policyResult.FinalException, executionTime);
+            var result = BuildResponse<CircuitResponse<T>>(request, policyResult.Outcome, policyResult.FinalException, executionTime);
 
             result.Value = value;
 
-            await Notify(appName, serviceName, request, result, executionTime);
+            await Notify(request, result, executionTime);
 
             return result;
         }
 
-        private Task Notify(string appName, string serviceName, ICircuitRequest request, ICircuitResponse response, TimeSpan executionTime)
+        private Task Notify(ICircuitRequest request, ICircuitResponse response, TimeSpan executionTime)
         {
             if (_listeners == null || !_listeners.Any()) return Task.CompletedTask;
 
@@ -81,8 +77,6 @@ namespace Bolt.CircuitBreaker.PollyImpl
                 var data = new CircuitStatusData
                 {
                     RequestId = request.RequestId,
-                    AppName = appName,
-                    ServiceName = serviceName,
                     CircuitKey = request.CircuitKey,
                     Context = request.Context,
                     ExecutionTime = executionTime,
@@ -101,7 +95,7 @@ namespace Bolt.CircuitBreaker.PollyImpl
             return Task.CompletedTask;
         }
 
-        private TResponse BuildResponse<TResponse>(string appName, string serviceName, ICircuitRequest request, Polly.OutcomeType outcome, Exception finalException, TimeSpan executionTime) where TResponse : ICircuitResponse, new()
+        private TResponse BuildResponse<TResponse>(ICircuitRequest request, Polly.OutcomeType outcome, Exception finalException, TimeSpan executionTime) where TResponse : ICircuitResponse, new()
         {
             var result = new TResponse();
 
@@ -109,13 +103,13 @@ namespace Bolt.CircuitBreaker.PollyImpl
             {
                 if (finalException is Polly.Timeout.TimeoutRejectedException || finalException is TimeoutException)
                 {
-                    Trace(appName, serviceName, CircuitStatus.Timeout, request, finalException, executionTime);
+                    Trace(CircuitStatus.Timeout, request, finalException, executionTime);
 
                     result.Status = CircuitStatus.Timeout;
                 }
                 else if (finalException is Polly.CircuitBreaker.BrokenCircuitException)
                 {
-                    Trace(appName, serviceName, CircuitStatus.Broken, request, finalException, executionTime);
+                    Trace(CircuitStatus.Broken, request, finalException, executionTime);
 
                     result.Status = CircuitStatus.Broken;
                 }
@@ -123,14 +117,14 @@ namespace Bolt.CircuitBreaker.PollyImpl
                 {
                     CircuitBreakerLog.LogError(finalException, finalException.Message);
 
-                    Trace(appName, serviceName, CircuitStatus.Failed, request, finalException, executionTime);
+                    Trace(CircuitStatus.Failed, request, finalException, executionTime);
 
                     result.Status = CircuitStatus.Failed;
                 }
             }
             else
             {
-                Trace(appName, serviceName, CircuitStatus.Succeed, request, finalException, executionTime);
+                Trace(CircuitStatus.Succeed, request, finalException, executionTime);
 
                 result.Status = CircuitStatus.Succeed;
             }
@@ -138,9 +132,9 @@ namespace Bolt.CircuitBreaker.PollyImpl
             return result;
         }
 
-        private void Trace(string appName, string serviceName, CircuitStatus status, ICircuitRequest request, Exception exception, TimeSpan executiontime)
+        private void Trace(CircuitStatus status, ICircuitRequest request, Exception exception, TimeSpan executiontime)
         {
-            CircuitBreakerLog.LogTrace($"RequestId:{request.RequestId}|AppName:{appName}|ServiceName:{serviceName}|CircuitKey:{request.CircuitKey}|Status:{status}|ExecutionTime:{executiontime.TotalMilliseconds}ms|Msg:{exception?.Message}");
+            CircuitBreakerLog.LogTrace($"RequestId:{request.RequestId}|CircuitKey:{request.CircuitKey}|Status:{status}|ExecutionTime:{executiontime.TotalMilliseconds}ms|Msg:{exception?.Message}");
         }
     }
 
