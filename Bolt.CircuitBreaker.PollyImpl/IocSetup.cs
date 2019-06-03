@@ -21,6 +21,7 @@ namespace Bolt.CircuitBreaker.PollyImpl
                     source.Configure<PolicySettingsConfig>(configuration.GetSection(options.PolicySettingsConfigPath));
                     source.TryAddEnumerable(ServiceDescriptor.Singleton<IPolicySettingsProvider, ConfigBasedPolicySettingsProvider>());
                 }
+                source.TryAddEnumerable(ServiceDescriptor.Singleton<IPolicySettingsProvider, ContextBasedPolicySettingsProvider>());
             }
             else
             {
