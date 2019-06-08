@@ -80,31 +80,53 @@ namespace Bolt.CircuitBreaker.PollyImpl
             }
         }
 
+        private TimeSpan AppliedTimespan(TimeSpan? requestTimespan, TimeSpan? settingsTimespan, TimeSpan defaultValue)
+        {
+            var timespan = requestTimespan.HasValue
+                            ? requestTimespan.Value
+                            : settingsTimespan.HasValue
+                                ? settingsTimespan.Value
+                                : TimeSpan.Zero;
+
+            return timespan == TimeSpan.Zero ? defaultValue : timespan;
+        }
+
+        private TimeSpan AppliedTimespan(TimeSpan? timespan, TimeSpan defaultValue)
+        {
+            var result = timespan.HasValue
+                            ? timespan.Value
+                            : TimeSpan.Zero;
+
+            return result == TimeSpan.Zero ? defaultValue : result;
+        }
+
+        private int EmptyAlternative(int? value, int alt)
+        {
+            if (!value.HasValue) return alt;
+
+            return value.Value <= 0 ? alt : value.Value;
+        }
+
         private IAsyncPolicy BuildPolicy(ICircuitRequest request, PolicySettings settings)
         {
             settings = settings ?? new PolicySettings();
 
             var maxParallelization = settings.MaxParallelization ?? 100;
             var maxQueingActions = settings.MaxQueingActions ?? 10;
-            var timeout = request.Timeout == TimeSpan.Zero 
-                            ? (settings.Timeout == TimeSpan.Zero 
-                                ? TimeSpan.FromMinutes(5) 
-                                : settings.Timeout)
-                            : request.Timeout;
+
+            var timeout = AppliedTimespan(request.Timeout, settings.Timeout, TimeSpan.FromMinutes(10));
 
             var retry = request.Retry ?? settings.Retry ?? 0;
 
-            var failureThreshold = (settings.FailurePercentThreshold ?? 50) / 100d;
+            var failurePercentThresholdPercent = EmptyAlternative(settings.FailurePercentThreshold, 50);
 
-            var samplingDuration = settings.SamplingDuration == TimeSpan.Zero 
-                                    ? TimeSpan.FromMilliseconds(1000) 
-                                    : settings.SamplingDuration;
+            var failureThreshold = failurePercentThresholdPercent / 100d;
+
+            var samplingDuration = AppliedTimespan(settings.SamplingDuration, TimeSpan.FromMilliseconds(1000));
 
             var minThroughput = settings.MinimumThroughput ?? 5;
 
-            var durationOfBreak = settings.DurationOfBreak == TimeSpan.Zero 
-                                    ? TimeSpan.FromMilliseconds(500) 
-                                    : settings.DurationOfBreak;
+            var durationOfBreak = AppliedTimespan(settings.DurationOfBreak, TimeSpan.FromMilliseconds(500));
 
             if(CircuitBreakerLog.IsTraceEnabled)
             {
@@ -112,14 +134,14 @@ namespace Bolt.CircuitBreaker.PollyImpl
                                         |AppName:{request.Context.GetAppName()}
                                         |ServiceName:{request.Context.GetServiceName()}
                                         |CircuitKey:{request.CircuitKey}
-                                        |Request.Retry:{(request.Retry == null ? "None": $"{request.Retry}")}
-                                        |Request.Timeout:{(request.Timeout == TimeSpan.Zero ? "None" : $"{request.Timeout.TotalMilliseconds}ms")}
-                                        |Settings.Retry:{retry}
-                                        |Settings.Timeout:{timeout.TotalMilliseconds}ms
+                                        |Request.Retry:{request.Retry}
+                                        |Request.Timeout:{request.Timeout}
+                                        |Settings.Retry:{settings.Retry}
+                                        |Settings.Timeout:{settings.Timeout}
                                         |Settings.FailureThreshold:{failureThreshold}
-                                        |Settings.SamplingDuration:{samplingDuration.TotalMilliseconds}ms
+                                        |Settings.SamplingDuration:{samplingDuration}
                                         |Settings.MinThroughput:{minThroughput}
-                                        |Settings.DurationOfBreak:{durationOfBreak.TotalMilliseconds}ms
+                                        |Settings.DurationOfBreak:{durationOfBreak}
                                         |Settings.MaxParallelization:{maxParallelization}
                                         |Settings.MaxQueingActions:{maxQueingActions}");
             }

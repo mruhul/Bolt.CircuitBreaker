@@ -31,10 +31,10 @@ namespace Bolt.CircuitBreaker.PollyImpl
             return int.TryParse(strValue, out var result) ? result : (int?)null;
         }
 
-        private TimeSpan GetTimeSpan(ICircuitRequest request, string key)
+        private TimeSpan? GetTimeSpan(ICircuitRequest request, string key)
         {
             var value = GetInt(request, key);
-            return value.HasValue ? TimeSpan.FromMilliseconds(value.Value) : TimeSpan.Zero;
+            return value.HasValue ? TimeSpan.FromMilliseconds(value.Value) : (TimeSpan?)null;
         }
     }
 }

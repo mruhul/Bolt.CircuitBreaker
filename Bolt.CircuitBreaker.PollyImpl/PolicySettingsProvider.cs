@@ -12,13 +12,13 @@ namespace Bolt.CircuitBreaker.PollyImpl
     public class PolicySettings
     {
         public bool ShouldReload { get; set; }
-        public TimeSpan Timeout { get; set; }
+        public TimeSpan? Timeout { get; set; }
         public int? Retry { get; set; }
         public int? MaxParallelization { get; set; }
         public int? MaxQueingActions { get; set; }
         public int? FailurePercentThreshold { get; set; }
-        public TimeSpan SamplingDuration { get; set; }
+        public TimeSpan? SamplingDuration { get; set; }
         public int? MinimumThroughput { get; set; }
-        public TimeSpan DurationOfBreak { get; set; }
+        public TimeSpan? DurationOfBreak { get; set; }
     }
 }

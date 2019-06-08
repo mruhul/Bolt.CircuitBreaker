@@ -6,6 +6,7 @@ namespace Bolt.CircuitBreaker.Abstracts
     {
         void Set(string name, object value);
         object Get(string name);
+        bool Remove(string name);
     }
 
     public class CircuitContext : ICircuitContext
@@ -22,6 +23,13 @@ namespace Bolt.CircuitBreaker.Abstracts
         {
             if (_store == null) _store = new Dictionary<string, object>();
             _store[name] = value;
+        }
+
+        public bool Remove(string name)
+        {
+            if (_store == null) return false;
+
+            return _store.Remove(name);
         }
     }
 

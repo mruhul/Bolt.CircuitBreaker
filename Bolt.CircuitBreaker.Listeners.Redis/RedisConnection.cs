@@ -11,6 +11,9 @@ namespace Bolt.CircuitBreaker.Listeners.Redis
     {
         private static readonly SemaphoreSlim _semaphoreSlim = new SemaphoreSlim(1, 1);
         private static IConnectionMultiplexer _connection;
+        private static DateTime? _lastFailure;
+        private static int _breakInSeconds = 5;
+        private const int _breakIncrement = 30;
 
         private readonly RedisConnectionSettings _options;
         private readonly ILogger<RedisConnection> _logger;
@@ -31,10 +34,26 @@ namespace Bolt.CircuitBreaker.Listeners.Redis
             {
                 if (_connection != null) return _connection;
 
+                if (_lastFailure.HasValue && DateTime.UtcNow.Subtract(_lastFailure.Value).TotalSeconds < _breakInSeconds)
+                {
+                    _logger.LogTrace($"Skip connection as it was failed so will try after {_breakInSeconds}");
+
+                    return _connection;
+                }
+
                 _connection = await ConnectionMultiplexer.ConnectAsync(_options.ConnectionString);
+
+                _lastFailure = null;
             }
             catch(Exception e)
             {
+                _lastFailure = DateTime.UtcNow;
+
+                if(_breakInSeconds < int.MaxValue - _breakIncrement)
+                {
+                    _breakInSeconds = _breakInSeconds + _breakIncrement;
+                }
+
                 _logger.LogError(e, e.Message);
             }
             finally
@@ -49,7 +68,7 @@ namespace Bolt.CircuitBreaker.Listeners.Redis
         {
             var con = await GetOrCreate();
 
-            return con.GetDatabase(db ?? _options.Db);
+            return con?.GetDatabase(db ?? _options.Db);
         }
     }
 

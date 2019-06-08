@@ -6,7 +6,7 @@ namespace Bolt.CircuitBreaker.Abstracts
     {
         string RequestId { get; }
         string CircuitKey { get; }
-        TimeSpan Timeout { get; }
+        TimeSpan? Timeout { get; }
         int? Retry { get; }
         ICircuitContext Context { get; }
     }
@@ -17,7 +17,7 @@ namespace Bolt.CircuitBreaker.Abstracts
 
         public string CircuitKey { get; set; }
 
-        public TimeSpan Timeout { get; set; }
+        public TimeSpan? Timeout { get; set; }
 
         public int? Retry { get; set; }
 

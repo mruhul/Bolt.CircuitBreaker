@@ -149,33 +149,6 @@ namespace Bolt.CircuitBreaker.PollyImpl
         }
     }
 
-    public class CircuitContext : ICircuitContext
-    {
-        private Dictionary<string, object> _source;
-
-        public CircuitContext()
-        {
-        }
-
-        public CircuitContext(Dictionary<string, object> source)
-        {
-            _source = source;
-        }
-
-        public object Get(string name)
-        {
-            if (_source == null) return null;
-
-            return _source.TryGetValue(name, out var result) ? result : null;
-        }
-
-        public void Set(string name, object value)
-        {
-            if (_source == null) _source = new Dictionary<string, object>();
-            _source[name] = value;
-        }
-    }
-
     public class CircuitResponse : ICircuitResponse
     {
         public bool IsSucceed => Status == CircuitStatus.Succeed;
